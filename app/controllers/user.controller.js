@@ -1,17 +1,29 @@
+
 const db = require("../models");
 const User = db.user;
+const validate = require("../models/user.model");
+const bcrypt = require("bcrypt");
+
 // Create and Save a new Tutorial
 
-exports.create = (req, res) => {
+exports.create = async (req, res) => {
         // Validate request
-        if (!req.body.name) {
-          res.status(400).send({ message: "Content can not be empty!" });
+        if (!req.body) {
+          res.status(400).send({ message: "input Error!" });
           return;
         }
+        const username = await User.findOne({name:req.body.name});
+        if(username){
+          res.status(409)
+          .send({message:"UserName is taken"});
+        }
+
+        const salt = await bcrypt.genSalt(Number(process.env.SALT));
+        const hashPassword = await bcrypt.hash(req.body.password,salt);
         // Create a Tutorial
         const user = new User({
           name: req.body.name,
-          password: req.body.password,
+          password: hashPassword,
           published: req.body.published ? req.body.published : false
         });
         // Save Tutorial in the database
